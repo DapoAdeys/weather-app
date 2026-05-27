@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather Fetcher</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="container">
+
+    <header>
+      <h1>⛅ Weather Fetcher</h1>
+      <p class="subtitle">Search any city and save the data locally</p>
+    </header>
+
+    <div class="search-bar">
+      <input type="text" id="cityInput" placeholder="Enter city name..." />
+      <button id="searchBtn">Search</button>
+    </div>
+
+    <div id="error-msg" class="error hidden"></div>
+
+    <div id="weather-card" class="weather-card hidden">
+
+      <div class="card-header">
+        <div>
+          <h2 id="city-name">--</h2>
+          <p id="country">--</p>
+        </div>
+        <div class="weather-icon" id="weather-icon">🌤</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat">
+          <span class="stat-label">Temperature</span>
+          <span class="stat-value" id="temp">--</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Feels Like</span>
+          <span class="stat-value" id="feels-like">--</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Min / Max</span>
+          <span class="stat-value" id="min-max">--</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Humidity</span>
+          <span class="stat-value" id="humidity">--</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Wind Speed</span>
+          <span class="stat-value" id="wind">--</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Condition</span>
+          <span class="stat-value" id="condition">--</span>
+        </div>
+      </div>
+
+      <div class="save-buttons">
+        <button id="saveJson">💾 Save as JSON</button>
+        <button id="saveCsv">📊 Save as CSV</button>
+      </div>
+
+    </div>
+
+    <div id="saved-msg" class="saved-msg hidden">✅ Data saved successfully!</div>
+
+  </div>
+
+  <script>
+    let currentData = null;
+
+    const weatherEmoji = {
+      Clear: "☀️", Clouds: "☁️", Rain: "🌧️",
+      Drizzle: "🌦️", Thunderstorm: "⛈️", Snow: "❄️",
+      Mist: "🌫️", Fog: "🌫️"
+    };
+
+    document.getElementById("searchBtn").addEventListener("click", fetchWeather);
+    document.getElementById("cityInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") fetchWeather();
+    });
+
+    async function fetchWeather() {
+      const city = document.getElementById("cityInput").value.trim();
+      if (!city) return;
+      hideAll();
+      try {
+        const res = await fetch(`/weather?city=${city}`);
+        const data = await res.json();
+        if (data.error) {
+          showError("City not found. Please try again.");
+          return;
+        }
+        currentData = data;
+        displayWeather(currentData);
+      } catch (err) {
+        showError("Something went wrong. Check your connection.");
+      }
+    }
+
+    function displayWeather(d) {
+      document.getElementById("city-name").textContent = d.city;
+      document.getElementById("country").textContent = d.country;
+      document.getElementById("temp").textContent = `${d.temperature}°C`;
+      document.getElementById("feels-like").textContent = `${d.feels_like}°C`;
+      document.getElementById("min-max").textContent = `${d.temp_min}° / ${d.temp_max}°C`;
+      document.getElementById("humidity").textContent = `${d.humidity}%`;
+      document.getElementById("wind").textContent = `${d.wind_speed} m/s`;
+      document.getElementById("condition").textContent = d.weather;
+      document.getElementById("weather-icon").textContent = weatherEmoji[d.weather] || "🌡️";
+      document.getElementById("weather-card").classList.remove("hidden");
+    }
+
+    document.getElementById("saveJson").addEventListener("click", () => {
+      if (!currentData) return;
+      const blob = new Blob([JSON.stringify(currentData, null, 4)], { type: "application/json" });
+      downloadFile(blob, "weather.json");
+      showSaved();
+    });
+
+    document.getElementById("saveCsv").addEventListener("click", () => {
+      if (!currentData) return;
+      const headers = Object.keys(currentData).join(",");
+      const values = Object.values(currentData).join(",");
+      const blob = new Blob([headers + "\n" + values], { type: "text/csv" });
+      downloadFile(blob, "weather.csv");
+      showSaved();
+    });
+
+    function downloadFile(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function showError(msg) {
+      const el = document.getElementById("error-msg");
+      el.textContent = msg;
+      el.classList.remove("hidden");
+    }
+
+    function showSaved() {
+      const el = document.getElementById("saved-msg");
+      el.classList.remove("hidden");
+      setTimeout(() => el.classList.add("hidden"), 3000);
+    }
+
+    function hideAll() {
+      document.getElementById("weather-card").classList.add("hidden");
+      document.getElementById("error-msg").classList.add("hidden");
+      document.getElementById("saved-msg").classList.add("hidden");
+    }
+  </script>
+
+</body>
+</html>

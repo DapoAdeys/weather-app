@@ -1,0 +1,11 @@
+{
+    "city": "Arrondissement de Nantes",
+    "country": "FR",
+    "temperature": 34.0,
+    "feels_like": 33.1,
+    "temp_min": 34.0,
+    "temp_max": 34.4,
+    "humidity": 29,
+    "weather": "Clear",
+    "wind_speed": 4.63
+}
